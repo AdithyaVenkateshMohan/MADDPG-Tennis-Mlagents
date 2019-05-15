@@ -16,7 +16,7 @@ print(device)
 #device = 'cpu'
 
 class DDPGAgent:
-    def __init__(self, in_actor, hidden_in_actor, hidden_out_actor, out_actor, in_critic, hidden_in_critic, hidden_out_critic, lr_actor=1.0e-5, lr_critic=1.0e-4):
+    def __init__(self, in_actor, hidden_in_actor, hidden_out_actor, out_actor, in_critic, hidden_in_critic, hidden_out_critic, lr_actor=1.0e-4, lr_critic=1.0e-3):
         super(DDPGAgent, self).__init__()
 
         self.actor = Network(in_actor, hidden_in_actor, hidden_out_actor, out_actor, actor=True).to(device)
@@ -32,17 +32,20 @@ class DDPGAgent:
         hard_update(self.target_critic, self.critic)
 
         self.actor_optimizer = Adam(self.actor.parameters(), lr=lr_actor)
-        self.critic_optimizer = Adam(self.critic.parameters(), lr=lr_critic, weight_decay=1.e-5)
+        self.critic_optimizer = Adam(self.critic.parameters(), lr=lr_critic, weight_decay=0)
 
 
-    def act(self, obs, noise=0.0):
+    def act(self, obs, noise=0.0 , batch = True):
         obs = obs.to(device)
-        self.actor.eval()
-        action = self.actor(obs).cpu().data + noise*self.noise.noise()
+        #self.actor.eval()
+        act = self.actor(obs , batch = batch).cpu().data
+        no = noise*self.noise.noise()
+        print( "act" , act , "noise" , no)
+        action = act + no
         return np.clip(action,-1,1)
 
-    def target_act(self, obs, noise=0.0):
+    def target_act(self, obs, noise=0.0 , batch = True):
         obs = obs.to(device)
-        self.target_actor.eval()
-        action = self.target_actor(obs).cpu().data + noise*self.noise.noise()
+        #self.target_actor.eval()
+        action = self.target_actor(obs , batch = batch).cpu().data + noise*self.noise.noise()
         return np.clip(action,-1,1)

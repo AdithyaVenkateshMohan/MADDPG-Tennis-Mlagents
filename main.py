@@ -40,7 +40,7 @@ def main():
     # change this to higher number to experiment. say 30000.
     number_of_episodes = 1000
     episode_length = 80
-    batchsize = 1000
+    batchsize = 128
     # how many episodes to save policy and gif
     save_interval = 1000
     t = 0

@@ -16,15 +16,15 @@ print(device)
 #device = 'cpu'
 
 class DDPGAgent:
-    def __init__(self, in_actor, hidden_in_actor, hidden_out_actor, out_actor, in_critic, hidden_in_critic, hidden_out_critic, lr_actor=1.0e-4, lr_critic=1.0e-3):
+    def __init__(self, state_size , action_size, hidden_in_dim, hidden_out_dim, num_agents =2 , lr_actor=1.0e-4, lr_critic=1.0e-3):
         super(DDPGAgent, self).__init__()
+        critic_state_size = state_size*num_agents + (action_size *(num_agents -1))
+        self.actor = Network(state_size , action_size, hidden_in_dim, hidden_out_dim , actor=True).to(device)
+        self.critic = Network(critic_state_size , action_size , hidden_in_dim, hidden_out_dim).to(device)
+        self.target_actor = Network(state_size  , action_size, hidden_in_dim, hidden_out_dim, actor=True).to(device)
+        self.target_critic = Network(critic_state_size, action_size , hidden_in_dim, hidden_out_dim ).to(device)
 
-        self.actor = Network(in_actor, hidden_in_actor, hidden_out_actor, out_actor, actor=True).to(device)
-        self.critic = Network(in_critic, hidden_in_critic, hidden_out_critic, 1).to(device)
-        self.target_actor = Network(in_actor, hidden_in_actor, hidden_out_actor, out_actor, actor=True).to(device)
-        self.target_critic = Network(in_critic, hidden_in_critic, hidden_out_critic, 1).to(device)
-
-        self.noise = OUNoise(out_actor, scale=1.0 )
+        self.noise = OUNoise(action_size, scale=1.0 )
 
         
         # initialize targets same as original networks
@@ -33,6 +33,9 @@ class DDPGAgent:
 
         self.actor_optimizer = Adam(self.actor.parameters(), lr=lr_actor)
         self.critic_optimizer = Adam(self.critic.parameters(), lr=lr_critic, weight_decay=0)
+        
+        print("critic", self.critic , self.target_critic ,"optim" ,self.critic_optimizer)
+        print("actor", self.actor , self.target_actor , "optim", self.actor_optimizer)
 
 
     def act(self, obs, noise=0.0 , batch = True):

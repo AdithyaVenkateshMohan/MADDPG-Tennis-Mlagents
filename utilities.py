@@ -101,6 +101,24 @@ def gumbel_softmax(logits, temperature=0.5, hard=False):
         y_hard = onehot_from_logits(y)
         y = (y_hard - y).detach() + y
     return y
+# seprates the current agent action from others
+def giveCurrentAgentsAction(Actions , agent_number , batch = True , num =2 , Tuples = True):
+    if(batch):
+        if(Tuples):
+            current_agent = Actions[:,agent_number,:]
+            rest_agents = Actions[:,num - agent_number -1,:]
+        else:    
+            current_agent = Actions[agent_number,:,:]
+            rest_agents = Actions[num - agent_number -1,:,:]
+        #for more agents 
+        #rest_agents = torch.cat((Actions[0:agent_number,:,:], Actions[agent_number+1:,:,:]) , dim=1)
+    else:
+        current_agent = Actions[agent_number,:]
+        rest_agents = Actions[num - agent_number -1,:]
+        #for more than 2 agents
+        #rest_agents = torch.cat((Actions[0:agent_number,:], Actions[agent_number+1:,:]) , dim=1)
+       
+    return current_agent , rest_agents
 
 """def main():
     torch.Tensor()

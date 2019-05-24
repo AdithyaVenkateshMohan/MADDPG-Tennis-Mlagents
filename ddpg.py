@@ -16,13 +16,14 @@ print(device)
 #device = 'cpu'
 
 class DDPGAgent:
-    def __init__(self, state_size , action_size, hidden_in_dim, hidden_out_dim, num_agents =2 , lr_actor=1.0e-4, lr_critic=1.0e-3):
+    def __init__(self, state_size , action_size, hidden_in_dim, hidden_out_dim,extrem_out = 64, num_agents =2 , lr_actor=1.0e-4, lr_critic=1.0e-3):
         super(DDPGAgent, self).__init__()
-        critic_state_size = state_size*num_agents + (action_size *(num_agents -1))
-        self.actor = Network(state_size , action_size, hidden_in_dim, hidden_out_dim , actor=True).to(device)
-        self.critic = Network(critic_state_size , action_size , hidden_in_dim, hidden_out_dim).to(device)
-        self.target_actor = Network(state_size  , action_size, hidden_in_dim, hidden_out_dim, actor=True).to(device)
-        self.target_critic = Network(critic_state_size, action_size , hidden_in_dim, hidden_out_dim ).to(device)
+        critic_state_size = state_size*num_agents 
+        critic_action_size = (action_size *(num_agents))
+        self.actor = Network(state_size , action_size, hidden_in_dim, hidden_out_dim ,hidden_extrem_out=extrem_out, actor=True).to(device)
+        self.critic = Network(critic_state_size , critic_action_size , hidden_in_dim, hidden_out_dim , hidden_extrem_out=extrem_out).to(device)
+        self.target_actor=Network(state_size,action_size, hidden_in_dim,hidden_out_dim,hidden_extrem_out=extrem_out, actor=True).to(device)
+        self.target_critic = Network(critic_state_size, critic_action_size ,hidden_in_dim,hidden_out_dim,hidden_extrem_out=extrem_out ).to(device)
 
         self.noise = OUNoise(action_size, scale=1.0 )
 
@@ -40,15 +41,17 @@ class DDPGAgent:
 
     def act(self, obs, noise=0.0 , batch = True):
         obs = obs.to(device)
-        #self.actor.eval()
+        self.actor.eval()
         act = self.actor(obs , batch = batch).cpu().data
         no = noise*self.noise.noise()
-        print( "act" , act , "noise" , no)
+        #print( "act" , act , "noise" , no)
         action = act + no
+        self.actor.train()
         return np.clip(action,-1,1)
 
     def target_act(self, obs, noise=0.0 , batch = True):
         obs = obs.to(device)
-        #self.target_actor.eval()
+        self.target_actor.eval()
         action = self.target_actor(obs , batch = batch).cpu().data + noise*self.noise.noise()
+        self.target_actor.training()
         return np.clip(action,-1,1)
